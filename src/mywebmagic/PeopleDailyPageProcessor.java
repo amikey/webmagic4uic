@@ -14,11 +14,11 @@ public class PeopleDailyPageProcessor implements PageProcessor {
 	@Override
 	public void process(Page page) {
 		List<String> list = page.getHtml()
-				.xpath("//ul[@class='p1_2 p1_4 clear']//a/@href")
+				.xpath("//div[@class='d2_left']//a/@href")
 				.regex("/n/\\d{4}/\\d{4}/c\\d{5}-\\d{8}.html").all();
 		ListIterator<String> iter = list.listIterator();
 		while (iter.hasNext()) {
-			iter.set("http://shipin.people.com.cn" + iter.next());
+			iter.set("shipin.people.com.cn" + iter.next());
 		}
 
 		page.addTargetRequests(list);
@@ -26,8 +26,13 @@ public class PeopleDailyPageProcessor implements PageProcessor {
 		FoodMateRepo foodMateRepo = new FoodMateRepo();
 		foodMateRepo.setTitle(page.getHtml()
 				.xpath("//h1[@id='p_title']/text()").toString());
-		foodMateRepo.setTime(page.getHtml()
-				.xpath("//span[@id='p_publishtime']/text()").toString());
+		String tempTimeString = page.getHtml()
+				.xpath("//span[@id='p_publishtime']/text()").toString();
+
+		tempTimeString = tempTimeString.replace("Äê", "-");
+		tempTimeString = tempTimeString.replace("ÔÂ", "-");
+		tempTimeString = tempTimeString.replace("ÈÕ", " ");
+		foodMateRepo.setTime(tempTimeString + ":00");
 		foodMateRepo.setSourcetitle(page.getHtml()
 				.xpath("//span[@id='p_origin']/a[1]/text()").toString());
 		/*
@@ -62,6 +67,8 @@ public class PeopleDailyPageProcessor implements PageProcessor {
 
 	public static void main(String[] args) {
 		Spider.create(new PeopleDailyPageProcessor())
-				.addUrl("http://shipin.people.com.cn/").thread(3).run();
+				.addPipeline(new FoodMatePipeline())
+				.addUrl("http://shipin.people.com.cn/GB/86117/index.html")
+				.thread(3).run();
 	}
 }
